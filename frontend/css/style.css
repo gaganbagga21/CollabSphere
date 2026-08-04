@@ -1,0 +1,103 @@
+/* 1. Import Libertinus Serif Font */
+@import url('https://fonts.googleapis.com/css2?family=Libertinus+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+/* 2. Global Base Variables & Theme Setup */
+:root {
+  --bg-main: #0b1315;
+  --bg-card: #142124;
+  --bg-card-hover: #1c2e32;
+  --border-subtle: #213236;
+  --border-glow: #2d454a;
+  --accent-mint: #34d399;
+  --accent-mint-hover: #6ee7b7;
+  --text-main: #f0fdf4;
+  --text-muted: #94a3b8;
+  --font-serif: 'Libertinus Serif', 'Linux Libertine', Georgia, serif;
+}
+
+/* Base Typography & Background */
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-serif);
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Headings Styling */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* 3. Reusable UI Components */
+
+/* Card Surface */
+.card-surface {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-surface:hover {
+  border-color: var(--border-glow);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(52, 211, 153, 0.1);
+}
+
+/* Input Fields */
+.input-field {
+  background-color: #080e10;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  font-family: var(--font-serif);
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-field:focus {
+  border-color: var(--accent-mint);
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.25);
+  outline: none;
+}
+
+/* Mint Buttons */
+.btn-mint {
+  background: var(--accent-mint);
+  color: #064e3b;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-mint:hover {
+  background: var(--accent-mint-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(52, 211, 153, 0.35);
+}
+
+.btn-mint:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Custom Sleek Dark Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-glow);
+}

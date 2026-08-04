@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — CollabSphere</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Toastify CSS & JS -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6 antialiased">
+
+  <div class="w-full max-w-md">
+    <!-- BRAND LOGO: Infinite Synergy -->
+    <div class="flex items-center justify-center gap-3 mb-8">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 p-0.5 shadow-lg shadow-emerald-500/20">
+        <div class="w-full h-full bg-[#0b1315] rounded-[10px] flex items-center justify-center">
+          <svg class="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6L6 18" />
+            <circle cx="6" cy="6" r="3" class="fill-emerald-400/20" />
+            <circle cx="18" cy="18" r="3" class="fill-emerald-400/20" />
+            <circle cx="18" cy="6" r="2" class="fill-emerald-400" />
+            <circle cx="6" cy="18" r="2" class="fill-emerald-400" />
+          </svg>
+        </div>
+      </div>
+      <span class="text-2xl font-bold text-emerald-50 tracking-tight">Collab<span class="text-emerald-400">Sphere</span></span>
+    </div>
+
+    <!-- LOGIN CARD -->
+    <div class="card-surface p-8 rounded-2xl shadow-xl">
+      <div class="text-center mb-6">
+        <h1 class="text-2xl font-bold text-emerald-50 flex items-center justify-center gap-2">
+          <i data-lucide="log-in" class="w-5 h-5 text-emerald-400"></i>
+          Welcome Back
+        </h1>
+        <p class="text-xs text-slate-400 mt-1">Sign in to manage your creator & brand collaborations</p>
+      </div>
+
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <i data-lucide="mail" class="w-3.5 h-3.5 text-slate-500"></i>
+            Email Address
+          </label>
+          <input type="email" id="loginEmail" required class="input-field w-full rounded-xl px-3.5 py-2.5 text-xs" placeholder="creator@collabsphere.com" />
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-500"></i>
+            Password
+          </label>
+          <input type="password" id="loginPassword" required class="input-field w-full rounded-xl px-3.5 py-2.5 text-xs" placeholder="••••••••" />
+        </div>
+
+        <button type="submit" class="btn-mint w-full py-2.5 rounded-xl text-xs shadow-md mt-2 flex items-center justify-center gap-2">
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          Sign In
+        </button>
+      </form>
+
+      <!-- DEMO QUICK LOGIN PRESETS (SWAPPED ORDER: BRAND FIRST, CREATOR SECOND) -->
+      <div class="mt-6 pt-6 border-t border-[#213236]">
+        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center mb-3">Quick Demo Accounts</p>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="demoBusinessBtn" type="button" class="bg-[#080e10] hover:bg-[#1c2e32] text-slate-300 border border-[#213236] text-[11px] font-semibold py-2 px-3 rounded-xl transition hover:border-slate-500 active:scale-95 flex items-center justify-center gap-1.5">
+            <i data-lucide="building-2" class="w-3.5 h-3.5 text-teal-400"></i>
+            Brand (Flex Gym)
+          </button>
+          <button id="demoCreatorBtn" type="button" class="bg-[#080e10] hover:bg-[#1c2e32] text-slate-300 border border-[#213236] text-[11px] font-semibold py-2 px-3 rounded-xl transition hover:border-slate-500 active:scale-95 flex items-center justify-center gap-1.5">
+            <i data-lucide="user" class="w-3.5 h-3.5 text-emerald-400"></i>
+            Creator (Gagan)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/login.js"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>
