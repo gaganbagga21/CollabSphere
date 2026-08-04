@@ -24,6 +24,9 @@ A full-stack collaboration platform connecting brands with content creators for 
 ---
 
 ## 📁 Repository Structure
+## 📁 Repository Structure
+
+```text
 .
 ├── backend/
 │   ├── node_modules/       # Node.js dependencies
@@ -33,16 +36,16 @@ A full-stack collaboration platform connecting brands with content creators for 
 │   ├── seed.js             # Database seeding script
 │   └── server.js           # Express server entry point
 └── frontend/
-├── css/                # Stylesheets
-├── js/                 # Client-side scripts
-├── dashboard.html      # User dashboard view
-├── index.html          # Landing page
-├── login.html          # Authentication page
-├── matchmaker.html     # Matchmaking interface
-├── profile.html        # User profile page
-└── tracker.html        # Activity tracker page
-
----
+    ├── css/                # Stylesheets
+    ├── js/                 # Client-side scripts
+    ├── dashboard.html      # User dashboard view
+    ├── index.html          # Landing page
+    ├── login.html          # Authentication page
+    ├── matchmaker.html     # Matchmaking interface
+    ├── profile.html        # User profile page
+    └── tracker.html        # Activity tracker page
+```
+--- 
 
 ## 🚀 Getting Started
 
