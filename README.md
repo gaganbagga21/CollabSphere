@@ -24,7 +24,6 @@ A full-stack collaboration platform connecting brands with content creators for 
 ---
 
 ## 📁 Repository Structure
-## 📁 Repository Structure
 
 ```text
 .
@@ -69,9 +68,12 @@ A full-stack collaboration platform connecting brands with content creators for 
    ```bash
    node server.js
 
-4. **Launch the FrontEnd**:
-    Open frontend/login.html in your web browser (or use the VS Code Live Server extension).
+4. **Launch the Frontend**:
+   * Open `frontend/login.html` in your web browser (or use the VS Code **Live Server** extension).
 
-✍️ Author
-Gagan Preet Singh Bagga
-[GitHub Profile](https://github.com/gaganbagga21)
+---
+
+## ✍️ Author
+
+* **Gagan Preet Singh Bagga**
+* [GitHub Profile](https://github.com/gaganbagga21)
