@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const user = JSON.parse(sessionStr);
 
-  // 1. Setup Navigation Role Badge
   const roleBadge = document.getElementById('userRoleBadge');
   if (roleBadge) {
     roleBadge.textContent = user.role === 'business' ? 'BUSINESS MODE' : 'CREATOR MODE';
@@ -13,97 +12,95 @@ document.addEventListener('DOMContentLoaded', () => {
       : 'bg-teal-400/10 text-teal-300 border border-teal-400/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider';
   }
 
-  // 2. Global Sign Out
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       localStorage.removeItem('user_session');
       localStorage.removeItem('user_role');
+      sessionStorage.clear();
       window.location.href = 'login.html';
     });
   }
 
-  // 3. Global Notification Polling & Badge Updater
   initGlobalNotifications(user);
 });
-
-let globalLastCount = -1;
 
 function initGlobalNotifications(user) {
   const checkNotifications = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/deals/notifications?userEmail=${user.email}&userRole=${user.role}`);
-      const data = await res.json();
+      // 1. Fetch Deal / Tracker Notifications
+      const resDeals = await fetch(`http://localhost:5000/api/deals/notifications?userEmail=${encodeURIComponent(user.email)}&userRole=${user.role}`);
+      const dataDeals = await resDeals.json();
 
-      if (data.success) {
-        const count = data.count || 0;
+      // 2. Fetch Total Unread Messages Count
+      const resMsgs = await fetch(`http://localhost:5000/api/messages/unread/total?userEmail=${encodeURIComponent(user.email)}`);
+      const dataMsgs = await resMsgs.json();
 
-        // Update Tracker & Messages badges across all pages
-        updateGlobalNavbarBadges(count);
+      if (dataDeals.success) {
+        const trackerCount = Number(dataDeals.count) || 0;
+        const previousNotified = Number(sessionStorage.getItem('last_notified_count') || -1);
 
-        // Show toast notification whenever count > 0 and count changes
-        if (count > 0 && (globalLastCount === -1 || count > globalLastCount)) {
-          
-          // Sound trigger (plays if user interacted with page)
-          try {
-            const chime = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-            chime.play().catch(() => {});
-          } catch(e) {}
+        const unreadMsgCount = (dataMsgs && dataMsgs.success) ? Number(dataMsgs.totalUnread) || 0 : 0;
+
+        // Update Tracker & Messages badges independently
+        updateGlobalNavbarBadges(trackerCount, unreadMsgCount);
+
+        // Toast alert strictly for new pending tracker offers
+        if (trackerCount > 0 && trackerCount > previousNotified) {
+          sessionStorage.setItem('last_notified_count', trackerCount);
 
           Toastify({
-            text: `🔔 Action Required! You have ${count} pending campaign notification(s).`,
-            duration: 4500,
+            text: `🔔 You have ${trackerCount} pending campaign request(s)!`,
+            duration: 4000,
             gravity: "top",
             position: "right",
             style: { 
               background: "linear-gradient(to right, #059669, #10b981)", 
               borderRadius: "12px", 
-              fontWeight: "600",
-              boxShadow: "0 10px 25px -5px rgba(16, 185, 129, 0.4)" 
+              fontWeight: "600"
             }
           }).showToast();
+        } else if (trackerCount === 0) {
+          sessionStorage.setItem('last_notified_count', 0);
         }
-
-        globalLastCount = count;
       }
     } catch (err) {
-      console.error('Notification Polling Error:', err);
+      console.error('Error in global notifications polling:', err);
     }
   };
 
-  // Run immediately within 500ms of loading ANY page, then poll every 4 seconds
   setTimeout(checkNotifications, 500);
-  setInterval(checkNotifications, 4000);
+  setInterval(checkNotifications, 5000); // Poll every 5 seconds globally
 }
 
-function updateGlobalNavbarBadges(count) {
-  // Update Tracker links across all pages
-  const trackerNavs = document.querySelectorAll('a[href="tracker.html"]');
+function updateGlobalNavbarBadges(trackerCount, unreadMsgCount) {
+  // A. TRACKER NAVBAR BADGE
+  const trackerNavs = document.querySelectorAll('a[href*="tracker"]');
   trackerNavs.forEach(nav => {
     let badge = nav.querySelector('.nav-notif-badge');
-    if (count > 0) {
+    if (trackerCount > 0) {
       if (!badge) {
         badge = document.createElement('span');
-        badge.className = 'nav-notif-badge bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full ml-1 animate-pulse';
+        badge.className = 'nav-notif-badge bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full ml-1.5 animate-pulse inline-block';
         nav.appendChild(badge);
       }
-      badge.textContent = count;
+      badge.textContent = trackerCount;
     } else if (badge) {
       badge.remove();
     }
   });
 
-  // Update Messages links across all pages
-  const messageNavs = document.querySelectorAll('a[href="messages.html"]');
+  // B. MESSAGES NAVBAR BADGE (UNREAD CHATS)
+  const messageNavs = document.querySelectorAll('a[href*="message"]');
   messageNavs.forEach(nav => {
     let badge = nav.querySelector('.nav-msg-badge');
-    if (count > 0) {
+    if (unreadMsgCount > 0) {
       if (!badge) {
         badge = document.createElement('span');
-        badge.className = 'nav-msg-badge bg-emerald-400 text-emerald-950 text-[10px] font-black px-1.5 py-0.5 rounded-full ml-1';
+        badge.className = 'nav-msg-badge bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full ml-1.5 animate-pulse inline-block shadow-lg';
         nav.appendChild(badge);
       }
-      badge.textContent = count;
+      badge.textContent = unreadMsgCount;
     } else if (badge) {
       badge.remove();
     }

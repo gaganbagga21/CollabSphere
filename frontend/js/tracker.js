@@ -6,32 +6,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const user = JSON.parse(sessionStr);
-
-  // 1. Navigation Role Badge
-  const roleBadge = document.getElementById('userRoleBadge');
-  if (roleBadge) {
-    roleBadge.textContent = user.role === 'business' ? 'BUSINESS MODE' : 'CREATOR MODE';
-    roleBadge.className = user.role === 'business'
-      ? 'bg-emerald-400/10 text-emerald-300 border border-emerald-400/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider'
-      : 'bg-teal-400/10 text-teal-300 border border-teal-400/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider';
-  }
-
   loadTrackerDeals(user);
-
-  // Sign Out
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      localStorage.removeItem('user_session');
-      localStorage.removeItem('user_role');
-      window.location.href = 'login.html';
-    });
-  }
 });
 
 async function loadTrackerDeals(user) {
   try {
-    const res = await fetch(`http://localhost:5000/api/deals?userEmail=${user.email}`);
+    const res = await fetch(`http://localhost:5000/api/deals?userEmail=${encodeURIComponent(user.email)}`);
     const data = await res.json();
 
     if (data.success) {
@@ -41,13 +21,13 @@ async function loadTrackerDeals(user) {
       const active = deals.filter(d => d.status === 'accepted');
       const completed = deals.filter(d => d.status === 'completed');
 
-      const pendingCountEl = document.getElementById('pendingCount');
-      const activeCountEl = document.getElementById('activeCount');
-      const completedCountEl = document.getElementById('completedCount');
+      const pCount = document.getElementById('pendingCount');
+      const aCount = document.getElementById('activeCount');
+      const cCount = document.getElementById('completedCount');
 
-      if (pendingCountEl) pendingCountEl.textContent = pending.length;
-      if (activeCountEl) activeCountEl.textContent = active.length;
-      if (completedCountEl) completedCountEl.textContent = completed.length;
+      if (pCount) pCount.textContent = pending.length;
+      if (aCount) aCount.textContent = active.length;
+      if (cCount) cCount.textContent = completed.length;
 
       renderCategory('pendingDealsList', pending, user, 'pending');
       renderCategory('activeDealsList', active, user, 'active');
@@ -91,26 +71,66 @@ function renderCategory(containerId, dealsList, user, type) {
           <p class="text-xs text-slate-400">
             Partner: <span class="text-emerald-300 font-semibold">${user.role === 'creator' ? deal.businessName : deal.creatorName}</span>
           </p>
-          <p class="text-xs text-slate-300 bg-[#080e10] p-3 rounded-xl border border-[#213236] my-3 italic">
+
+          <p class="text-xs text-slate-300 bg-[#080e10] p-3 rounded-xl border border-[#213236] my-2 italic">
             "${deal.perks}"
           </p>
+
+          <div class="bg-[#080e10] p-2.5 rounded-xl border border-[#213236] my-3">
+            <div class="flex justify-between items-center text-[11px] mb-1">
+              <span class="text-slate-400 font-bold flex items-center gap-1">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i> Escrow Vault: ₹${deal.escrowAmount || 5000}
+              </span>
+              <span class="text-emerald-300 font-bold uppercase text-[10px]">${deal.escrowStatus || 'funded'}</span>
+            </div>
+            <div class="w-full bg-[#142124] h-1.5 rounded-full overflow-hidden border border-[#213236]">
+              <div class="bg-emerald-400 h-full ${
+                deal.escrowStatus === 'released' ? 'w-full' : 
+                deal.escrowStatus === 'requested' ? 'w-3/4' : 'w-1/2'
+              } transition-all duration-500"></div>
+            </div>
+          </div>
+
+          ${type === 'active' ? `
+            <div class="bg-[#080e10] p-3 rounded-xl border border-[#213236] mb-3">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <i data-lucide="link" class="w-3 h-3 text-emerald-400"></i> Deliverable Proof Link
+              </p>
+              ${user.role === 'creator' ? `
+                <div class="flex gap-2">
+                  <input type="url" id="proofInput-${deal._id}" value="${deal.proofUrl || ''}" placeholder="https://instagram.com/reel/..." class="input-field flex-1 rounded-xl px-3 py-1.5 text-xs" />
+                  <button class="submit-proof-btn btn-mint px-3 py-1.5 rounded-xl text-xs font-bold" data-id="${deal._id}">Submit</button>
+                </div>
+              ` : `
+                <div class="flex items-center justify-between text-xs">
+                  <a href="${deal.proofUrl || '#'}" target="_blank" class="text-emerald-400 hover:underline truncate max-w-[200px]">
+                    ${deal.proofUrl ? deal.proofUrl : 'No link submitted yet'}
+                  </a>
+                  ${deal.proofUrl && deal.proofStatus !== 'verified' ? `
+                    <button class="verify-proof-btn bg-teal-500/20 text-teal-300 border border-teal-500/30 px-2.5 py-1 rounded-lg text-[10px] font-bold" data-id="${deal._id}">
+                      Verify Proof
+                    </button>
+                  ` : deal.proofStatus === 'verified' ? `
+                    <span class="text-emerald-400 font-bold text-[10px] flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> Verified</span>
+                  ` : ''}
+                </div>
+              `}
+            </div>
+          ` : ''}
         </div>
 
         ${type === 'pending' ? (
           isSender ? `
-            <!-- SENDER VIEW: 'Pending Approval' + 'Cancel Request' Button -->
             <div class="flex items-center gap-2 mt-2">
               <div class="flex-1 bg-amber-500/10 border border-amber-500/20 text-amber-300 font-bold py-2 rounded-xl text-xs text-center flex items-center justify-center gap-1.5">
                 <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-400"></i>
                 Pending Approval
               </div>
-              <button class="delete-deal-btn bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 font-bold py-2 px-3 rounded-xl text-xs transition active:scale-95 flex items-center gap-1" data-id="${deal._id}">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                Cancel
+              <button type="button" class="delete-deal-btn bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 font-bold py-2 px-3 rounded-xl text-xs transition active:scale-95 flex items-center gap-1 cursor-pointer" data-id="${deal._id}">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5 pointer-events-none"></i> Cancel
               </button>
             </div>
           ` : `
-            <!-- RECEIVER VIEW: Accept / Decline Buttons -->
             <div class="flex items-center gap-2 mt-2">
               <button class="tracker-action-btn w-full bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold py-2 rounded-xl text-xs transition active:scale-95 flex items-center justify-center gap-1" data-id="${deal._id}" data-status="accepted">
                 <i data-lucide="check" class="w-3.5 h-3.5"></i> Accept Deal
@@ -121,12 +141,26 @@ function renderCategory(containerId, dealsList, user, type) {
             </div>
           `
         ) : type === 'active' ? `
-          <button class="tracker-action-btn w-full bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold py-2 rounded-xl text-xs transition active:scale-95 mt-2 flex items-center justify-center gap-1" data-id="${deal._id}" data-status="completed">
-            <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Mark Complete
-          </button>
+          <div class="space-y-2 mt-2">
+            ${user.role === 'creator' ? `
+              ${deal.escrowStatus === 'released' ? `
+                <button class="creator-review-btn w-full bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold py-2 rounded-xl text-xs transition active:scale-95 flex items-center justify-center gap-1" data-id="${deal._id}" data-partner="${deal.businessId}">
+                  <i data-lucide="star" class="w-3.5 h-3.5"></i> Review Partner & Finish Deal
+                </button>
+              ` : `
+                <button class="request-payment-btn w-full bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold py-2 rounded-xl text-xs transition active:scale-95 flex items-center justify-center gap-1.5" data-id="${deal._id}">
+                  <i data-lucide="arrow-down-left" class="w-3.5 h-3.5"></i> Request Payment Release
+                </button>
+              `}
+            ` : `
+              <button class="tracker-action-btn w-full bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold py-2 rounded-xl text-xs transition active:scale-95 flex items-center justify-center gap-1" data-id="${deal._id}" data-status="completed" data-partner="${deal.creatorId}">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Release Escrow Payout
+              </button>
+            `}
+          </div>
         ` : `
           <div class="text-center text-[11px] text-emerald-300 font-semibold mt-2 flex items-center justify-center gap-1">
-            <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-teal-400"></i> Campaign Completed
+            <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-teal-400"></i> Campaign Completed & Escrow Released
           </div>
         `}
       </div>
@@ -135,23 +169,43 @@ function renderCategory(containerId, dealsList, user, type) {
 
   if (window.lucide) lucide.createIcons();
 
-  // Attach status change listener (Accept / Decline / Complete)
-  document.querySelectorAll('.tracker-action-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const buttonEl = e.target.closest('button');
+  container.querySelectorAll('.tracker-action-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      const buttonEl = e.currentTarget;
       const id = buttonEl.getAttribute('data-id');
       const nextStatus = buttonEl.getAttribute('data-status');
       changeDealStatus(id, nextStatus, user);
-    });
+    };
   });
 
-  // Attach delete / cancel request listener
-  document.querySelectorAll('.delete-deal-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const buttonEl = e.target.closest('button');
-      const id = buttonEl.getAttribute('data-id');
-      deleteDealRequest(id, user);
-    });
+  container.querySelectorAll('.request-payment-btn').forEach(btn => {
+    btn.onclick = async (e) => {
+      const dealId = e.currentTarget.getAttribute('data-id');
+      await fetch(`http://localhost:5000/api/deals/${dealId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ escrowStatus: 'requested' })
+      });
+
+      Toastify({
+        text: "💸 Payment release requested!",
+        duration: 3000,
+        style: { background: "linear-gradient(to right, #059669, #10b981)" }
+      }).showToast();
+
+      loadTrackerDeals(user);
+    };
+  });
+
+  container.querySelectorAll('.delete-deal-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const dealId = e.currentTarget.getAttribute('data-id');
+      if (dealId) {
+        deleteDealRequest(dealId, user);
+      }
+    };
   });
 }
 
@@ -167,45 +221,33 @@ async function changeDealStatus(dealId, status, user) {
     if (data.success) {
       Toastify({
         text: `Deal status updated to "${status}"!`,
-        duration: 3000,
+        duration: 2500,
         gravity: "bottom",
         position: "right",
         style: {
-          background: status === 'declined' 
-            ? "linear-gradient(to right, #dc2626, #ef4444)" 
-            : "linear-gradient(to right, #059669, #10b981)",
-          borderRadius: "12px",
-          fontWeight: "600",
-          fontSize: "13px"
+          background: status === 'declined' ? "linear-gradient(to right, #dc2626, #ef4444)" : "linear-gradient(to right, #059669, #10b981)",
+          borderRadius: "12px"
         }
       }).showToast();
 
       loadTrackerDeals(user);
     }
   } catch (err) {
-    console.error('Error changing deal status:', err);
+    console.error('Error changing status:', err);
   }
 }
 
 async function deleteDealRequest(dealId, user) {
   try {
-    const res = await fetch(`http://localhost:5000/api/deals/${dealId}`, {
-      method: 'DELETE'
-    });
-
+    const res = await fetch(`http://localhost:5000/api/deals/${dealId}`, { method: 'DELETE' });
     const data = await res.json();
     if (data.success) {
       Toastify({
-        text: "🗑️ Deal request cancelled and removed.",
-        duration: 3000,
+        text: "🗑️ Deal request cancelled.",
+        duration: 2500,
         gravity: "bottom",
         position: "right",
-        style: {
-          background: "linear-gradient(to right, #dc2626, #ef4444)",
-          borderRadius: "12px",
-          fontWeight: "600",
-          fontSize: "13px"
-        }
+        style: { background: "linear-gradient(to right, #dc2626, #ef4444)", borderRadius: "12px" }
       }).showToast();
 
       loadTrackerDeals(user);

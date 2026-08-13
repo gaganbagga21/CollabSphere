@@ -6,17 +6,12 @@
   <title>Messages — CollabSphere</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="css/style.css" />
-
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-
-  <!-- Toastify CSS & JS -->
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 </head>
 <body class="min-h-screen pb-12 antialiased flex flex-col">
 
-  <!-- NAVBAR -->
   <header class="bg-[#142124] border-b border-[#213236] sticky top-0 z-50 shadow-md">
     <div class="max-w-7xl mx-auto px-6 h-16 flex justify-between items-center">
       <div class="flex items-center gap-3">
@@ -44,7 +39,7 @@
         <a href="tracker.html" class="hover:text-slate-200 transition flex items-center gap-1.5">
           <i data-lucide="kanban" class="w-4 h-4"></i> Tracker
         </a>
-        <a href="messages.html" class="text-emerald-300 font-bold border-b-2 border-emerald-400 py-5 flex items-center gap-1.5">
+        <a href="message.html" class="text-emerald-300 font-bold border-b-2 border-emerald-400 py-5 flex items-center gap-1.5">
           <i data-lucide="message-square" class="w-4 h-4"></i> Messages
         </a>
         <a href="profile.html" class="hover:text-slate-200 transition flex items-center gap-1.5">
@@ -63,19 +58,16 @@
     </div>
   </header>
 
-  <!-- MAIN CHAT CONTAINER -->
   <main class="max-w-7xl mx-auto px-6 pt-8 flex-1 w-full flex flex-col">
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-emerald-50 flex items-center gap-2">
         <i data-lucide="message-square" class="w-6 h-6 text-emerald-400"></i>
         Campaign Inbox
       </h1>
-      <p class="text-xs text-slate-400 mt-1">Discuss campaign briefs, share deliverable previews, and review active deals in real time.</p>
+      <p class="text-xs text-slate-400 mt-1">Discuss campaign briefs and share deliverable previews in real time.</p>
     </div>
 
     <div class="card-surface rounded-2xl shadow-2xl overflow-hidden flex-1 grid grid-cols-1 md:grid-cols-3 min-h-[560px] border border-[#213236]">
-      
-      <!-- LEFT SIDEBAR -->
       <div class="border-b md:border-b-0 md:border-r border-[#213236] bg-[#080e10] flex flex-col">
         <div class="p-4 border-b border-[#213236]">
           <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -83,15 +75,12 @@
             Active Campaign Chats
           </h2>
         </div>
-
         <div id="conversationsList" class="flex-1 overflow-y-auto divide-y divide-[#213236]">
           <div class="p-5 text-center text-slate-500 text-xs animate-pulse">Loading conversations...</div>
         </div>
       </div>
 
-      <!-- RIGHT PANEL: CHAT THREAD -->
       <div class="col-span-2 flex flex-col bg-[#142124]">
-        
         <div id="chatHeader" class="p-4 border-b border-[#213236] bg-[#080e10] flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-xl bg-emerald-400/20 text-emerald-300 flex items-center justify-center font-bold">
@@ -99,7 +88,7 @@
             </div>
             <div>
               <h3 id="chatTitle" class="font-bold text-sm text-emerald-50">Select a Conversation</h3>
-              <p id="chatSubTitle" class="text-[11px] text-slate-400">Choose an active campaign deal from the left sidebar to start chatting</p>
+              <p id="chatSubTitle" class="text-[11px] text-slate-400">Choose an active campaign deal from the left sidebar</p>
             </div>
           </div>
         </div>
@@ -118,12 +107,11 @@
             <i data-lucide="send" class="w-3.5 h-3.5"></i> Send
           </button>
         </form>
-
       </div>
     </div>
   </main>
 
-  <script src="js/messages.js"></script>
+  <script src="js/message.js"></script>
   <script src="js/global-nav.js"></script>
   <script>lucide.createIcons();</script>
 </body>

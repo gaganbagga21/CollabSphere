@@ -44,6 +44,9 @@
         <a href="tracker.html" class="hover:text-slate-200 transition flex items-center gap-1.5">
           <i data-lucide="kanban" class="w-4 h-4"></i> Tracker
         </a>
+        <a href="message.html" class="hover:text-slate-200 transition flex items-center gap-1.5">
+          <i data-lucide="message-square" class="w-4 h-4"></i> Messages
+        </a>
         <a href="profile.html" class="hover:text-slate-200 transition flex items-center gap-1.5">
           <i data-lucide="user-cog" class="w-4 h-4"></i> Profile
         </a>
@@ -112,7 +115,43 @@
     </div>
   </main>
 
+  <!-- FLOATING AI STRATEGIST BOT -->
+  <button id="openAiBotBtn" class="fixed bottom-6 right-6 bg-emerald-400 hover:bg-emerald-300 text-emerald-950 p-4 rounded-full shadow-2xl transition hover:scale-105 z-50 flex items-center justify-center">
+    <i data-lucide="bot" class="w-6 h-6"></i>
+  </button>
+
+  <div id="aiBotModal" class="hidden fixed bottom-20 right-6 w-96 card-surface rounded-2xl shadow-2xl border border-emerald-500/30 z-50 flex flex-col h-[500px]">
+    <div class="p-4 border-b border-[#213236] flex items-center justify-between bg-[#080e10] rounded-t-2xl">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-lg bg-emerald-400/20 flex items-center justify-center">
+          <i data-lucide="sparkles" class="w-4 h-4 text-emerald-400"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-xs text-emerald-50">CollabSphere AI Strategist</h3>
+          <p class="text-[10px] text-slate-400">Reel Ideas & Sales Analysis</p>
+        </div>
+      </div>
+      <button id="closeAiBotBtn" class="text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <div id="aiChatLog" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
+      <div class="bg-[#080e10] p-3 rounded-xl border border-[#213236] text-slate-300">
+        👋 Hi! Ask me for **Reel concepts**, **video scripts**, **hashtags**, or **sales ROI analytics**!
+      </div>
+    </div>
+
+    <form id="aiChatForm" class="p-3 border-t border-[#213236] bg-[#080e10] flex gap-2 rounded-b-2xl">
+      <input type="text" id="aiInput" required placeholder="e.g. Give 3 reel ideas for gym sponsorship..." class="input-field flex-1 rounded-xl px-3 py-2 text-xs" />
+      <button type="submit" class="btn-mint px-3 py-2 rounded-xl text-xs flex items-center justify-center">
+        <i data-lucide="send" class="w-3.5 h-3.5"></i>
+      </button>
+    </form>
+  </div>
+
   <script src="js/dashboard.js"></script>
+  <script src="js/global-nav.js"></script>
   <script>lucide.createIcons();</script>
 </body>
 </html>
