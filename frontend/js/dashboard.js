@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const nameEl = document.getElementById('userName');
   if (nameEl) nameEl.textContent = user.name || 'User';
 
+  injectQrModalHtml(); // Inject Payment QR Modal into Dashboard DOM
   loadDashboardData(user);
 
   // AI Assistant Drawer Controls
@@ -34,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const query = inputEl ? inputEl.value.trim() : '';
       if (!query) return;
 
-      // Append User Question
       aiChatLog.innerHTML += `
         <div class="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl text-emerald-200 text-right font-medium mb-2.5 text-xs">
           ${query}
@@ -67,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById(loadingId)?.remove();
 
         if (data && data.answer) {
-          // Format markdown bolding and line breaks cleanly
           const formattedAnswer = data.answer
             .replace(/\*\*(.*?)\*\*/g, '<strong class="text-emerald-300">$1</strong>')
             .replace(/\n/g, '<br/>');
@@ -80,14 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (err) {
         document.getElementById(loadingId)?.remove();
-        aiChatLog.innerHTML += `
-          <div class="bg-[#080e10] p-3.5 rounded-xl border border-[#213236] text-slate-200 leading-relaxed mb-2.5 text-xs">
-            💡 <strong class="text-emerald-300">Strategy Tips for "${query}"</strong>:<br/><br/>
-            1. <strong class="text-emerald-300">Hook viewers in 3s</strong>: Use strong text overlays or a problem statement.<br/>
-            2. <strong class="text-emerald-300">Clear Deliverable</strong>: Highlight the brand value clearly mid-video.<br/>
-            3. <strong class="text-emerald-300">Strong CTA</strong>: Direct viewers to save/share the post.
-          </div>
-        `;
       }
 
       aiChatLog.scrollTop = aiChatLog.scrollHeight;
@@ -117,23 +108,26 @@ async function loadDashboardData(user) {
       if (notificationsContainer) {
         let alertHtml = '';
 
-        // BRAND PAYMENT REQUEST ALERT
+        // OPTION 2: BRAND NOTIFICATION WITH DIRECT QR PAYOUT
         if (data.paymentRequestedCount > 0 && data.paymentRequests) {
           data.paymentRequests.forEach(req => {
             alertHtml += `
-              <div id="notif-card-${req._id}" class="bg-gradient-to-r from-amber-950/90 to-[#080e10] border border-amber-400/40 p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl mb-3 transition-all duration-300">
+              <div id="notif-card-${req._id}" class="bg-gradient-to-r from-amber-950/90 to-[#080e10] border border-amber-400/40 p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl mb-3 transition-all duration-300">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-xl bg-amber-400/20 flex items-center justify-center shrink-0">
                     <i data-lucide="dollar-sign" class="w-5 h-5 text-amber-400 animate-bounce"></i>
                   </div>
                   <div>
                     <h3 class="font-bold text-sm text-amber-100">Payment Release Requested</h3>
-                    <p class="text-xs text-amber-200/80">Creator requested escrow payout release for "${req.title}".</p>
+                    <p class="text-xs text-amber-200/80">Creator requested escrow payout for "${req.title}".</p>
                   </div>
                 </div>
-                <div class="flex items-center gap-2">
-                  <button type="button" class="view-tracker-btn bg-amber-400 text-slate-950 hover:bg-amber-300 px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition cursor-pointer" data-id="${req._id}">
-                    Release Payout →
+                <div class="flex items-center gap-2 self-end sm:self-auto">
+                  <button type="button" class="open-qr-dashboard-btn bg-amber-400 text-slate-950 hover:bg-amber-300 px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition cursor-pointer flex items-center gap-1.5" 
+                    data-id="${req._id}" 
+                    data-amount="${req.escrowAmount || 5000}" 
+                    data-recipient="${req.creatorName}">
+                    <i data-lucide="qr-code" class="w-3.5 h-3.5"></i> Release Payout →
                   </button>
                   <button type="button" class="dismiss-notif-btn text-amber-300 hover:text-white p-2 rounded-lg hover:bg-amber-500/20 text-xs font-bold cursor-pointer" data-id="${req._id}">✕</button>
                 </div>
@@ -142,12 +136,12 @@ async function loadDashboardData(user) {
           });
         }
 
-        // CREATOR: GLOWING GREEN PAYMENT RELEASED BADGE
+        // CREATOR: PAYOUT RECEIVED BADGE
         if (data.paymentReleasedCount > 0 && data.paymentReleases) {
           data.paymentReleases.forEach(rel => {
             alertHtml += `
               <div id="notif-card-${rel._id}" class="bg-gradient-to-r from-emerald-400 via-lime-400 to-green-300 p-1 rounded-2xl shadow-2xl shadow-emerald-500/40 mb-3 transition-all duration-300">
-                <div class="bg-[#031d14] p-5 rounded-[13px] flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="bg-[#031d14] p-4 sm:p-5 rounded-[13px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div class="flex items-center gap-3.5">
                     <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-lime-400 text-slate-950 flex items-center justify-center shrink-0 font-black shadow-lg">
                       <i data-lucide="check-circle-2" class="w-7 h-7 text-slate-950"></i>
@@ -162,10 +156,10 @@ async function loadDashboardData(user) {
                       <p class="text-xs font-semibold text-emerald-300/90 mt-0.5">Funds have been released into your account balance.</p>
                     </div>
                   </div>
-                  <div class="flex items-center gap-2 shrink-0">
-                    <button type="button" class="view-tracker-btn bg-gradient-to-r from-emerald-400 to-lime-400 text-slate-950 px-5 py-2.5 rounded-xl text-xs font-black tracking-wide shadow-lg hover:brightness-110 transition active:scale-95 cursor-pointer" data-id="${rel._id}">
+                  <div class="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                    <a href="tracker.html" class="bg-gradient-to-r from-emerald-400 to-lime-400 text-slate-950 px-5 py-2.5 rounded-xl text-xs font-black tracking-wide shadow-lg hover:brightness-110 transition active:scale-95 cursor-pointer">
                       View Tracker →
-                    </button>
+                    </a>
                     <button type="button" class="dismiss-notif-btn text-emerald-300 hover:text-white p-2 rounded-lg hover:bg-emerald-500/20 text-xs font-bold cursor-pointer" data-id="${rel._id}">✕</button>
                   </div>
                 </div>
@@ -177,7 +171,7 @@ async function loadDashboardData(user) {
         // PENDING OFFERS
         if (data.pendingCount > 0) {
           alertHtml += `
-            <div class="bg-gradient-to-r from-emerald-950/80 to-[#080e10] border border-emerald-500/30 p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+            <div class="bg-gradient-to-r from-emerald-950/80 to-[#080e10] border border-emerald-500/30 p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-emerald-400/20 flex items-center justify-center shrink-0">
                   <i data-lucide="bell" class="w-5 h-5 text-emerald-400 animate-bounce"></i>
@@ -187,7 +181,7 @@ async function loadDashboardData(user) {
                   <p class="text-xs text-slate-400">Review partner pitches and approve campaign offers in your Tracker.</p>
                 </div>
               </div>
-              <a href="tracker.html" class="btn-mint px-4 py-2 rounded-xl text-xs font-bold shrink-0 flex items-center gap-1.5">
+              <a href="tracker.html" class="btn-mint px-4 py-2 rounded-xl text-xs font-bold shrink-0 flex items-center gap-1.5 self-end sm:self-auto">
                 Go to Tracker <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
               </a>
             </div>
@@ -196,7 +190,7 @@ async function loadDashboardData(user) {
 
         if (!alertHtml) {
           alertHtml = `
-            <div class="card-surface p-5 rounded-2xl text-slate-400 text-xs flex items-center justify-between">
+            <div class="card-surface p-4 sm:p-5 rounded-2xl text-slate-400 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <span class="flex items-center gap-2">
                 <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
                 All clear! No pending notifications right now.
@@ -209,32 +203,21 @@ async function loadDashboardData(user) {
         notificationsContainer.innerHTML = alertHtml;
         if (window.lucide) lucide.createIcons();
 
-        // VIEW TRACKER AND DISMISS
-        notificationsContainer.querySelectorAll('.view-tracker-btn').forEach(btn => {
-          btn.onclick = async (e) => {
-            const buttonEl = e.target.closest('button');
-            const id = buttonEl ? buttonEl.getAttribute('data-id') : null;
-            
-            const cardEl = document.getElementById(`notif-card-${id}`);
-            if (cardEl) cardEl.remove();
-
-            if (id) {
-              try {
-                await fetch(`http://localhost:5000/api/deals/${id}/dismiss-notification`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userRole: user.role })
-                });
-              } catch (err) {}
-            }
-            window.location.href = 'tracker.html';
+        // ATTACH QR POPUP TO DASHBOARD NOTIFICATION BUTTON
+        notificationsContainer.querySelectorAll('.open-qr-dashboard-btn').forEach(btn => {
+          btn.onclick = (e) => {
+            const buttonEl = e.currentTarget;
+            const id = buttonEl.getAttribute('data-id');
+            const amount = buttonEl.getAttribute('data-amount');
+            const recipient = buttonEl.getAttribute('data-recipient');
+            openPaymentQrModal(id, amount, recipient, user);
           };
         });
 
-        // DISMISS BUTTON ('✕') LISTENER
+        // DISMISS BUTTON LISTENER
         notificationsContainer.querySelectorAll('.dismiss-notif-btn').forEach(btn => {
           btn.onclick = async (e) => {
-            const buttonEl = e.target.closest('button');
+            const buttonEl = e.currentTarget;
             const id = buttonEl ? buttonEl.getAttribute('data-id') : null;
 
             const cardEl = document.getElementById(`notif-card-${id}`);
@@ -260,4 +243,79 @@ async function loadDashboardData(user) {
   } catch (err) {
     console.error('Error fetching dashboard notifications:', err);
   }
+}
+
+// INJECT QR MODAL INTO DASHBOARD DOM
+function injectQrModalHtml() {
+  if (document.getElementById('qrPaymentModal')) return;
+
+  const modalHtml = `
+    <div id="qrPaymentModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden p-4">
+      <div class="bg-[#080e10] border border-[#213236] p-6 rounded-3xl max-w-sm w-full text-center shadow-2xl relative">
+        <button id="closeQrModalBtn" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold">✕</button>
+        
+        <div class="w-12 h-12 rounded-2xl bg-emerald-400/20 text-emerald-400 flex items-center justify-center mx-auto mb-3">
+          <i data-lucide="qr-code" class="w-6 h-6"></i>
+        </div>
+
+        <h3 class="font-black text-lg text-emerald-50">Release Escrow Payout</h3>
+        <p class="text-xs text-slate-400 mt-1" id="qrRecipientText">Payout to Creator</p>
+
+        <div class="bg-white p-4 rounded-2xl my-4 inline-block shadow-inner">
+          <img id="upiQrImage" src="" class="w-44 h-44 mx-auto rounded-lg" alt="UPI Payment QR Code" />
+        </div>
+
+        <div class="bg-[#030809] border border-[#213236] p-3 rounded-xl mb-4">
+          <p class="text-[10px] text-slate-500 uppercase font-bold">Fixed Escrow Amount</p>
+          <p class="text-xl font-black text-emerald-400" id="qrAmountText">₹5,000</p>
+        </div>
+
+        <button id="confirmQrPayoutBtn" class="w-full btn-mint py-3 rounded-xl text-xs font-black tracking-wide shadow-lg active:scale-95 transition">
+          ✅ Confirm Payout & Release Funds
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  document.getElementById('closeQrModalBtn').onclick = () => {
+    document.getElementById('qrPaymentModal').classList.add('hidden');
+  };
+}
+
+function openPaymentQrModal(dealId, amount, recipientName, user) {
+  const modal = document.getElementById('qrPaymentModal');
+  const qrImage = document.getElementById('upiQrImage');
+  const amountText = document.getElementById('qrAmountText');
+  const recipientText = document.getElementById('qrRecipientText');
+  const confirmBtn = document.getElementById('confirmQrPayoutBtn');
+
+  if (!modal) return;
+
+  const upiId = "collabsphere@upi";
+  const formattedAmount = Number(amount || 5000);
+  const upiString = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(recipientName)}&am=${formattedAmount}&cu=INR&tn=Escrow%20Payout`;
+  
+  qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}`;
+  amountText.textContent = `₹${formattedAmount.toLocaleString('en-IN')}`;
+  recipientText.textContent = `Payee: ${recipientName}`;
+
+  modal.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+
+  confirmBtn.onclick = async () => {
+    confirmBtn.innerHTML = `Releasing Payout...`;
+    
+    // Complete deal status in MongoDB
+    await fetch(`http://localhost:5000/api/deals/${dealId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'completed' })
+    });
+
+    modal.classList.add('hidden');
+    confirmBtn.innerHTML = `✅ Confirm Payout & Release Funds`;
+    loadDashboardData(user);
+  };
 }
