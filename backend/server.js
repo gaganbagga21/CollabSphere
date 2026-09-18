@@ -1,7 +1,3 @@
-import dns from 'node:dns';
-dns.setDefaultResultOrder('ipv4first');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
-
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -12,17 +8,27 @@ dotenv.config();
 
 const app = express();
 
-// CORS Configuration to allow requests from Vercel & local development
+// Updated CORS setup to allow all Vercel subdomains and local origins
 app.use(cors({
-  origin: [
-    'https://collab-sphere-five-kappa.vercel.app',
-    'http://localhost:5000',
-    'http://127.0.0.1:5500',
-    'http://localhost:3000'
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin matches Vercel domains or local hosts
+    if (
+      origin.endsWith('.vercel.app') || 
+      origin.includes('localhost') || 
+      origin.includes('127.0.0.1')
+    ) {
+      return callback(null, true);
+    }
+    
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 
+app.use(express.json());
 app.use(express.json());
 
 const apiKey = process.env.GEMINI_API_KEY || '';
