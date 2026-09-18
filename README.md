@@ -72,7 +72,7 @@ A full-stack collaboration platform connecting brands with content creators for 
    * Open `frontend/login.html` in your web browser (or use the VS Code **Live Server** extension).
 
 ---
-🌐 **Live Demo:** [oiltrace-ai.vercel.app](https://your-deployed-app-url.vercel.app)
+🌐 **Live Demo:** https://collab-sphere-five-kappa.vercel.app/
 ## ✍️ Author
 
 * **Gagan Preet Singh Bagga**
