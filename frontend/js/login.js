@@ -3,6 +3,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const demoCreatorBtn = document.getElementById('demoCreatorBtn');
   const demoBusinessBtn = document.getElementById('demoBusinessBtn');
 
+  // Dynamic API Base URL depending on environment
+  const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000'
+    : 'https://collabsphere-rldj.onrender.com';
+
   if (demoCreatorBtn) {
     demoCreatorBtn.addEventListener('click', () => {
       document.getElementById('loginEmail').value = 'creator@collabsphere.com';
@@ -25,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const password = document.getElementById('loginPassword').value.trim();
 
       try {
-        const res = await fetch(`${API_BASE_URL}/api/login`, {
+        const res = await fetch(`${API_BASE}/api/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })

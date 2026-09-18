@@ -1,10 +1,10 @@
 // Base API & WebSocket endpoint configuration
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:5000'
-  : '';
+  : 'https://collabsphere-rldj.onrender.com';
 
 const WS_BASE = window.location.protocol === 'https:'
-  ? `wss://${window.location.host}`
+  ? 'wss://collabsphere-rldj.onrender.com'
   : `ws://${window.location.hostname || 'localhost'}:5000`;
 
 let socket = null;
