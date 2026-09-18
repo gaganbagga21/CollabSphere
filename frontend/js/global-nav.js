@@ -1,9 +1,23 @@
+// Base API and WebSocket configuration pointing to Render backend
+const RENDER_DOMAIN = 'collabsphere-rldj.onrender.com';
+
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000'
+  : `https://${RENDER_DOMAIN}`;
+
+const WS_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'ws://localhost:5000'
+  : `wss://${RENDER_DOMAIN}`;
+
+let globalSocket = null;
+
 document.addEventListener('DOMContentLoaded', () => {
   const sessionStr = localStorage.getItem('user_session');
   if (!sessionStr) return;
 
   const user = JSON.parse(sessionStr);
 
+  // Role Badge Setup
   const roleBadge = document.getElementById('userRoleBadge');
   if (roleBadge) {
     roleBadge.textContent = user.role === 'business' ? 'BUSINESS MODE' : 'CREATOR MODE';
@@ -12,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : 'bg-teal-400/10 text-teal-300 border border-teal-400/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider';
   }
 
+  // Logout Handler
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
@@ -22,33 +37,47 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  initGlobalNotifications(user);
+  fetchInitialNotificationCounts(user);
+  initGlobalWebSocket(user);
 });
 
-function initGlobalNotifications(user) {
-  const checkNotifications = async () => {
+async function fetchInitialNotificationCounts(user) {
+  try {
+    const [resDeals, resMsgs] = await Promise.all([
+      fetch(`${API_BASE}/api/deals/notifications?userEmail=${encodeURIComponent(user.email)}&userRole=${user.role}`),
+      fetch(`${API_BASE}/api/messages/unread/total?userEmail=${encodeURIComponent(user.email)}`)
+    ]);
+
+    const dataDeals = await resDeals.json();
+    const dataMsgs = await resMsgs.json();
+
+    const trackerCount = dataDeals.success ? (Number(dataDeals.count) || 0) : 0;
+    const unreadMsgCount = dataMsgs.success ? (Number(dataMsgs.totalUnread) || 0) : 0;
+
+    updateGlobalNavbarBadges(trackerCount, unreadMsgCount);
+  } catch (err) {
+    console.error('Error fetching initial notifications from Render:', err);
+  }
+}
+
+function initGlobalWebSocket(user) {
+  globalSocket = new WebSocket(WS_BASE);
+
+  globalSocket.onopen = () => {
+    globalSocket.send(JSON.stringify({
+      type: 'IDENTIFY_USER',
+      payload: { email: user.email, role: user.role }
+    }));
+  };
+
+  globalSocket.onmessage = (event) => {
     try {
-      // 1. Fetch Deal / Tracker Notifications
-      const resDeals = await fetch(`http://localhost:5000/api/deals/notifications?userEmail=${encodeURIComponent(user.email)}&userRole=${user.role}`);
-      const dataDeals = await resDeals.json();
-
-      // 2. Fetch Total Unread Messages Count
-      const resMsgs = await fetch(`http://localhost:5000/api/messages/unread/total?userEmail=${encodeURIComponent(user.email)}`);
-      const dataMsgs = await resMsgs.json();
-
-      if (dataDeals.success) {
-        const trackerCount = Number(dataDeals.count) || 0;
-        const previousNotified = Number(sessionStorage.getItem('last_notified_count') || -1);
-
-        const unreadMsgCount = (dataMsgs && dataMsgs.success) ? Number(dataMsgs.totalUnread) || 0 : 0;
-
-        // Update Tracker & Messages badges independently
+      const data = JSON.parse(event.data);
+      if (data.type === 'NAV_BADGES_UPDATE') {
+        const { trackerCount, unreadMsgCount, isNewOffer } = data.payload;
         updateGlobalNavbarBadges(trackerCount, unreadMsgCount);
 
-        // Toast alert strictly for new pending tracker offers
-        if (trackerCount > 0 && trackerCount > previousNotified) {
-          sessionStorage.setItem('last_notified_count', trackerCount);
-
+        if (isNewOffer && trackerCount > 0) {
           Toastify({
             text: `🔔 You have ${trackerCount} pending campaign request(s)!`,
             duration: 4000,
@@ -60,21 +89,19 @@ function initGlobalNotifications(user) {
               fontWeight: "600"
             }
           }).showToast();
-        } else if (trackerCount === 0) {
-          sessionStorage.setItem('last_notified_count', 0);
         }
       }
     } catch (err) {
-      console.error('Error in global notifications polling:', err);
+      console.error('WebSocket payload parsing error:', err);
     }
   };
 
-  setTimeout(checkNotifications, 500);
-  setInterval(checkNotifications, 5000); // Poll every 5 seconds globally
+  globalSocket.onclose = () => {
+    setTimeout(() => initGlobalWebSocket(user), 5000);
+  };
 }
 
 function updateGlobalNavbarBadges(trackerCount, unreadMsgCount) {
-  // A. TRACKER NAVBAR BADGE
   const trackerNavs = document.querySelectorAll('a[href*="tracker"]');
   trackerNavs.forEach(nav => {
     let badge = nav.querySelector('.nav-notif-badge');
@@ -90,7 +117,6 @@ function updateGlobalNavbarBadges(trackerCount, unreadMsgCount) {
     }
   });
 
-  // B. MESSAGES NAVBAR BADGE (UNREAD CHATS)
   const messageNavs = document.querySelectorAll('a[href*="message"]');
   messageNavs.forEach(nav => {
     let badge = nav.querySelector('.nav-msg-badge');

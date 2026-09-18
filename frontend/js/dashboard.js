@@ -1,3 +1,14 @@
+// Base API & WebSocket endpoint configuration
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000'
+  : '';
+
+const WS_BASE = window.location.protocol === 'https:'
+  ? `wss://${window.location.host}`
+  : `ws://${window.location.hostname || 'localhost'}:5000`;
+
+let socket = null;
+
 document.addEventListener('DOMContentLoaded', () => {
   const sessionStr = localStorage.getItem('user_session');
   if (!sessionStr) {
@@ -10,8 +21,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const nameEl = document.getElementById('userName');
   if (nameEl) nameEl.textContent = user.name || 'User';
 
-  injectQrModalHtml(); // Inject Payment QR Modal into Dashboard DOM
+  injectQrModalHtml();
   loadDashboardData(user);
+
+  // Initialize Real-Time WebSocket Connection
+  initWebSocket(user);
 
   // AI Assistant Drawer Controls
   const openAiBotBtn = document.getElementById('openAiBotBtn');
@@ -35,11 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const query = inputEl ? inputEl.value.trim() : '';
       if (!query) return;
 
-      aiChatLog.innerHTML += `
-        <div class="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl text-emerald-200 text-right font-medium mb-2.5 text-xs">
-          ${query}
-        </div>
-      `;
+      const userBubble = document.createElement('div');
+      userBubble.className = 'bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl text-emerald-200 text-right font-medium mb-2.5 text-xs';
+      userBubble.textContent = query;
+      aiChatLog.appendChild(userBubble);
 
       inputEl.value = '';
       aiChatLog.scrollTop = aiChatLog.scrollHeight;
@@ -53,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) lucide.createIcons();
 
       try {
-        const res = await fetch('http://localhost:5000/api/ai-assistant', {
+        const res = await fetch(`${API_BASE}/api/ai-assistant`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -79,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (err) {
         document.getElementById(loadingId)?.remove();
+        console.error('AI assistant fetch error:', err);
       }
 
       aiChatLog.scrollTop = aiChatLog.scrollHeight;
@@ -87,11 +101,164 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+/**
+ * Real-Time WebSocket Initialization & Handler
+ */
+function initWebSocket(user) {
+  socket = new WebSocket(WS_BASE);
+
+  socket.onopen = () => {
+    console.log('⚡ Connected to Real-time Notification Engine');
+    // Register user details for targeting updates
+    socket.send(JSON.stringify({
+      type: 'IDENTIFY_USER',
+      payload: { email: user.email, role: user.role }
+    }));
+  };
+
+  socket.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      handleRealtimeEvent(data, user);
+    } catch (err) {
+      console.error('Error parsing WebSocket message:', err);
+    }
+  };
+
+  socket.onclose = () => {
+    console.warn('WebSocket disconnected. Reconnecting in 5s...');
+    setTimeout(() => initWebSocket(user), 5000);
+  };
+
+  socket.onerror = (err) => {
+    console.error('WebSocket Error:', err);
+  };
+}
+
+function handleRealtimeEvent(eventData, user) {
+  const notificationsContainer = document.getElementById('notificationsContainer');
+  if (!notificationsContainer) return;
+
+  // Clear "all clear" state if present
+  const defaultCard = notificationsContainer.querySelector('.card-surface');
+  if (defaultCard) defaultCard.remove();
+
+  if (eventData.type === 'PAYMENT_REQUESTED') {
+    const req = eventData.payload;
+    const cardHtml = `
+      <div id="notif-card-${req._id}" class="bg-gradient-to-r from-amber-950/90 to-[#080e10] border border-amber-400/40 p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl mb-3 transition-all duration-300 animate-pulse">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-400/20 flex items-center justify-center shrink-0">
+            <i data-lucide="dollar-sign" class="w-5 h-5 text-amber-400 animate-bounce"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-amber-100">Payment Release Requested</h3>
+            <p class="text-xs text-amber-200/80">Creator requested escrow payout for "${req.title}".</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 self-end sm:self-auto">
+          <button type="button" class="open-qr-dashboard-btn bg-amber-400 text-slate-950 hover:bg-amber-300 px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition cursor-pointer flex items-center gap-1.5" 
+            data-id="${req._id}" 
+            data-amount="${req.escrowAmount || 5000}" 
+            data-recipient="${req.creatorName}">
+            <i data-lucide="qr-code" class="w-3.5 h-3.5"></i> Release Payout →
+          </button>
+          <button type="button" class="dismiss-notif-btn text-amber-300 hover:text-white p-2 rounded-lg hover:bg-amber-500/20 text-xs font-bold cursor-pointer" data-id="${req._id}">✕</button>
+        </div>
+      </div>
+    `;
+
+    notificationsContainer.insertAdjacentHTML('afterbegin', cardHtml);
+    attachCardListeners(req._id, user);
+  }
+
+  if (eventData.type === 'PAYMENT_RELEASED') {
+    const rel = eventData.payload;
+    const cardHtml = `
+      <div id="notif-card-${rel._id}" class="bg-gradient-to-r from-emerald-400 via-lime-400 to-green-300 p-1 rounded-2xl shadow-2xl shadow-emerald-500/40 mb-3 transition-all duration-300">
+        <div class="bg-[#031d14] p-4 sm:p-5 rounded-[13px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-lime-400 text-slate-950 flex items-center justify-center shrink-0 font-black shadow-lg">
+              <i data-lucide="check-circle-2" class="w-7 h-7 text-slate-950"></i>
+            </div>
+            <div>
+              <span class="inline-block px-2.5 py-0.5 rounded-full bg-lime-400 text-slate-950 text-[10px] font-black uppercase tracking-wider mb-1 shadow-sm">
+                💰 PAYOUT RECEIVED & ESCROW CLEARED
+              </span>
+              <h3 class="font-black text-base text-emerald-100 tracking-tight">
+                ₹${rel.escrowAmount || 5000} Received for "${rel.title}"
+              </h3>
+              <p class="text-xs font-semibold text-emerald-300/90 mt-0.5">Funds have been released into your account balance.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+            <a href="tracker.html" class="bg-gradient-to-r from-emerald-400 to-lime-400 text-slate-950 px-5 py-2.5 rounded-xl text-xs font-black tracking-wide shadow-lg hover:brightness-110 transition active:scale-95 cursor-pointer">
+              View Tracker →
+            </a>
+            <button type="button" class="dismiss-notif-btn text-emerald-300 hover:text-white p-2 rounded-lg hover:bg-emerald-500/20 text-xs font-bold cursor-pointer" data-id="${rel._id}">✕</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    notificationsContainer.insertAdjacentHTML('afterbegin', cardHtml);
+    attachCardListeners(rel._id, user);
+  }
+
+  // Refresh counters
+  if (eventData.stats) {
+    const statTotal = document.getElementById('statTotalDeals');
+    const statActive = document.getElementById('statActiveDeals');
+    const statCompleted = document.getElementById('statCompletedDeals');
+
+    if (statTotal) statTotal.textContent = eventData.stats.total || 0;
+    if (statActive) statActive.textContent = eventData.stats.active || 0;
+    if (statCompleted) statCompleted.textContent = eventData.stats.completed || 0;
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function attachCardListeners(id, user) {
+  const card = document.getElementById(`notif-card-${id}`);
+  if (!card) return;
+
+  const qrBtn = card.querySelector('.open-qr-dashboard-btn');
+  if (qrBtn) {
+    qrBtn.onclick = (e) => {
+      const buttonEl = e.currentTarget;
+      const id = buttonEl.getAttribute('data-id');
+      const amount = buttonEl.getAttribute('data-amount');
+      const recipient = buttonEl.getAttribute('data-recipient');
+      openPaymentQrModal(id, amount, recipient, user);
+    };
+  }
+
+  const dismissBtn = card.querySelector('.dismiss-notif-btn');
+  if (dismissBtn) {
+    dismissBtn.onclick = async () => {
+      card.style.opacity = '0';
+      card.style.transform = 'scale(0.95)';
+      setTimeout(() => card.remove(), 200);
+
+      try {
+        await fetch(`${API_BASE}/api/deals/${id}/dismiss-notification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userRole: user.role })
+        });
+      } catch (err) {
+        console.error('Error dismissing notification:', err);
+      }
+    };
+  }
+}
+
 async function loadDashboardData(user) {
   const notificationsContainer = document.getElementById('notificationsContainer');
 
   try {
-    const res = await fetch(`http://localhost:5000/api/deals/notifications?userEmail=${encodeURIComponent(user.email)}&userRole=${user.role}`);
+    const res = await fetch(`${API_BASE}/api/deals/notifications?userEmail=${encodeURIComponent(user.email)}&userRole=${user.role}`);
     const data = await res.json();
 
     if (data.success) {
@@ -108,7 +275,6 @@ async function loadDashboardData(user) {
       if (notificationsContainer) {
         let alertHtml = '';
 
-        // OPTION 2: BRAND NOTIFICATION WITH DIRECT QR PAYOUT
         if (data.paymentRequestedCount > 0 && data.paymentRequests) {
           data.paymentRequests.forEach(req => {
             alertHtml += `
@@ -136,7 +302,6 @@ async function loadDashboardData(user) {
           });
         }
 
-        // CREATOR: PAYOUT RECEIVED BADGE
         if (data.paymentReleasedCount > 0 && data.paymentReleases) {
           data.paymentReleases.forEach(rel => {
             alertHtml += `
@@ -168,7 +333,6 @@ async function loadDashboardData(user) {
           });
         }
 
-        // PENDING OFFERS
         if (data.pendingCount > 0) {
           alertHtml += `
             <div class="bg-gradient-to-r from-emerald-950/80 to-[#080e10] border border-emerald-500/30 p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
@@ -203,7 +367,6 @@ async function loadDashboardData(user) {
         notificationsContainer.innerHTML = alertHtml;
         if (window.lucide) lucide.createIcons();
 
-        // ATTACH QR POPUP TO DASHBOARD NOTIFICATION BUTTON
         notificationsContainer.querySelectorAll('.open-qr-dashboard-btn').forEach(btn => {
           btn.onclick = (e) => {
             const buttonEl = e.currentTarget;
@@ -214,7 +377,6 @@ async function loadDashboardData(user) {
           };
         });
 
-        // DISMISS BUTTON LISTENER
         notificationsContainer.querySelectorAll('.dismiss-notif-btn').forEach(btn => {
           btn.onclick = async (e) => {
             const buttonEl = e.currentTarget;
@@ -229,12 +391,14 @@ async function loadDashboardData(user) {
 
             if (id) {
               try {
-                await fetch(`http://localhost:5000/api/deals/${id}/dismiss-notification`, {
+                await fetch(`${API_BASE}/api/deals/${id}/dismiss-notification`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ userRole: user.role })
                 });
-              } catch (err) {}
+              } catch (err) {
+                console.error('Error dismissing notification:', err);
+              }
             }
           };
         });
@@ -245,7 +409,6 @@ async function loadDashboardData(user) {
   }
 }
 
-// INJECT QR MODAL INTO DASHBOARD DOM
 function injectQrModalHtml() {
   if (document.getElementById('qrPaymentModal')) return;
 
@@ -305,17 +468,28 @@ function openPaymentQrModal(dealId, amount, recipientName, user) {
   if (window.lucide) lucide.createIcons();
 
   confirmBtn.onclick = async () => {
+    confirmBtn.disabled = true;
     confirmBtn.innerHTML = `Releasing Payout...`;
     
-    // Complete deal status in MongoDB
-    await fetch(`http://localhost:5000/api/deals/${dealId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'completed' })
-    });
+    try {
+      const response = await fetch(`${API_BASE}/api/deals/${dealId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed' })
+      });
 
-    modal.classList.add('hidden');
-    confirmBtn.innerHTML = `✅ Confirm Payout & Release Funds`;
-    loadDashboardData(user);
+      if (!response.ok) {
+        throw new Error('Failed to update deal status');
+      }
+
+      modal.classList.add('hidden');
+      loadDashboardData(user);
+    } catch (err) {
+      console.error('Error releasing payout:', err);
+      alert('Could not complete payout release. Please try again.');
+    } finally {
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = `✅ Confirm Payout & Release Funds`;
+    }
   };
 }

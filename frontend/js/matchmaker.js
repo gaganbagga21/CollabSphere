@@ -1,3 +1,10 @@
+// Dynamic Base API endpoint resolution
+const RENDER_DOMAIN = 'collabsphere-rldj.onrender.com';
+
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000'
+  : `https://${RENDER_DOMAIN}`;
+
 document.addEventListener('DOMContentLoaded', () => {
   const sessionStr = localStorage.getItem('user_session');
   if (!sessionStr) {
@@ -57,7 +64,7 @@ async function runMatchmaker(user, query) {
   }
 
   try {
-    const res = await fetch('http://localhost:5000/api/matchmaker', {
+    const res = await fetch(`${API_BASE}/api/matchmaker`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt: query, userRole: user.role })
@@ -174,7 +181,7 @@ function renderResults(candidates, user) {
       if (window.lucide) lucide.createIcons();
 
       try {
-        const res = await fetch('http://localhost:5000/api/ai/generate-text', {
+        const res = await fetch(`${API_BASE}/api/ai/generate-text`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -232,7 +239,7 @@ async function sendDealRequest(targetAccount, user) {
   };
 
   try {
-    const res = await fetch('http://localhost:5000/api/deals', {
+    const res = await fetch(`${API_BASE}/api/deals`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

@@ -1,3 +1,10 @@
+// Base API endpoint resolution for Render deployment
+const RENDER_DOMAIN = 'collabsphere-rldj.onrender.com';
+
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000'
+  : `https://${RENDER_DOMAIN}`;
+
 document.addEventListener('DOMContentLoaded', () => {
   const sessionStr = localStorage.getItem('user_session');
   if (!sessionStr) {
@@ -34,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!text) return;
 
       try {
-        const res = await fetch('http://localhost:5000/api/messages', {
+        const res = await fetch(`${API_BASE}/api/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -59,13 +66,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // Load Inbox List (With Unseen Styling & Badge Indicators)
+  // Load Inbox List
   async function loadInbox(user, isSilent = false) {
     const list = document.getElementById('conversationsList');
     if (!list) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/deals?userEmail=${encodeURIComponent(user.email)}&inboxOnly=true`);
+      const res = await fetch(`${API_BASE}/api/deals?userEmail=${encodeURIComponent(user.email)}&inboxOnly=true`);
       const data = await res.json();
 
       const deals = data.deals || [];
@@ -159,7 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Renders Unseen Theme styling if d.unreadCount > 0
   function renderChatItem(d, user, isPast = false) {
     const partnerName = user.role === 'creator' ? d.businessName : d.creatorName;
     const hasUnread = d.unreadCount > 0;
@@ -220,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!log) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/messages/${dealId}?userEmail=${encodeURIComponent(user.email)}`);
+      const res = await fetch(`${API_BASE}/api/messages/${dealId}?userEmail=${encodeURIComponent(user.email)}`);
       const data = await res.json();
 
       if (data.success && data.messages && data.messages.length > 0) {
@@ -289,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch Total Unread Messages for Navbar Badge
   async function fetchNavMessageBadge(user) {
     try {
-      const res = await fetch(`http://localhost:5000/api/messages/unread/total?userEmail=${encodeURIComponent(user.email)}`);
+      const res = await fetch(`${API_BASE}/api/messages/unread/total?userEmail=${encodeURIComponent(user.email)}`);
       const data = await res.json();
 
       let navMsgLink = document.querySelector('a[href="message.html"]') || document.querySelector('a[href="messages.html"]');
@@ -313,7 +319,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Empty State Placeholder
   function renderEmptyState() {
     const log = document.getElementById('messagesLog');
     const textInput = document.getElementById('messageTextInput');
@@ -351,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function deleteSingleMessage(messageId, dealId, user) {
     try {
-      const res = await fetch(`http://localhost:5000/api/messages/${messageId}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api/messages/${messageId}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
         Toastify({
@@ -379,13 +384,13 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       let res;
       if (isPast) {
-        res = await fetch('http://localhost:5000/api/deals/hide-chat', {
+        res = await fetch(`${API_BASE}/api/deals/hide-chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ dealId, userRole: user.role })
         });
       } else {
-        res = await fetch('http://localhost:5000/api/messages/clear-history', {
+        res = await fetch(`${API_BASE}/api/messages/clear-history`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ dealId })

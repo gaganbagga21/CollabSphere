@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const password = document.getElementById('loginPassword').value.trim();
 
       try {
-        const res = await fetch('http://localhost:5000/api/login', {
+        const res = await fetch(`${API_BASE_URL}/api/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })

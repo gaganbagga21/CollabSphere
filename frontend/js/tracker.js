@@ -1,3 +1,10 @@
+// Base API endpoint resolution for Render deployment
+const RENDER_DOMAIN = 'collabsphere-rldj.onrender.com';
+
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000'
+  : `https://${RENDER_DOMAIN}`;
+
 document.addEventListener('DOMContentLoaded', () => {
   const sessionStr = localStorage.getItem('user_session');
   if (!sessionStr) {
@@ -12,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadTrackerDeals(user) {
   try {
-    const res = await fetch(`http://localhost:5000/api/deals?userEmail=${encodeURIComponent(user.email)}`);
+    const res = await fetch(`${API_BASE}/api/deals?userEmail=${encodeURIComponent(user.email)}`);
     const data = await res.json();
 
     if (data.success) {
@@ -197,7 +204,7 @@ function renderCategory(containerId, dealsList, user, type) {
   container.querySelectorAll('.request-payment-btn').forEach(btn => {
     btn.onclick = async (e) => {
       const dealId = e.currentTarget.getAttribute('data-id');
-      await fetch(`http://localhost:5000/api/deals/${dealId}`, {
+      await fetch(`${API_BASE}/api/deals/${dealId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ escrowStatus: 'requested' })
@@ -276,11 +283,11 @@ function openPaymentQrModal(dealId, amount, recipientName, user) {
 
   if (!modal) return;
 
-  const upiId = "collabsphere@upi"; // Replace with your merchant/escrow UPI ID
+  const upiId = "collabsphere@upi"; // Escrow merchant UPI ID
   const formattedAmount = Number(amount || 5000);
   const upiString = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(recipientName)}&am=${formattedAmount}&cu=INR&tn=Escrow%20Payout`;
   
-  // Uses free QR Code API to generate a scanable UPI QR
+  // Uses free QR Code API to generate a scannable UPI QR
   qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}`;
   amountText.textContent = `₹${formattedAmount.toLocaleString('en-IN')}`;
   recipientText.textContent = `Payee: ${recipientName}`;
@@ -298,7 +305,7 @@ function openPaymentQrModal(dealId, amount, recipientName, user) {
 
 async function changeDealStatus(dealId, status, user) {
   try {
-    const res = await fetch(`http://localhost:5000/api/deals/${dealId}`, {
+    const res = await fetch(`${API_BASE}/api/deals/${dealId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status })
@@ -325,7 +332,7 @@ async function changeDealStatus(dealId, status, user) {
 
 async function deleteDealRequest(dealId, user) {
   try {
-    const res = await fetch(`http://localhost:5000/api/deals/${dealId}`, { method: 'DELETE' });
+    const res = await fetch(`${API_BASE}/api/deals/${dealId}`, { method: 'DELETE' });
     const data = await res.json();
     if (data.success) {
       if (typeof Toastify !== 'undefined') {

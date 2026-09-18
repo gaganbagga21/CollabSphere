@@ -11,7 +11,18 @@ import { GoogleGenAI } from '@google/genai';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+// CORS Configuration to allow requests from Vercel & local development
+app.use(cors({
+  origin: [
+    'https://collab-sphere-five-kappa.vercel.app',
+    'http://localhost:5000',
+    'http://127.0.0.1:5500',
+    'http://localhost:3000'
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
 
 const apiKey = process.env.GEMINI_API_KEY || '';
